@@ -24,3 +24,9 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+# Project
+!/wrf/daemon/daemon.exe
+!/wrf/daemon/wrf.exe
+
+
