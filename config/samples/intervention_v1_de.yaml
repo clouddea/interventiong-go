@@ -1,0 +1,26 @@
+apiVersion: intervention.xue1.top/v1
+kind: DE
+metadata:
+  labels:
+    app.kubernetes.io/name: de
+    app.kubernetes.io/instance: de-sample
+    app.kubernetes.io/part-of: intervention-go
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: intervention-go
+  name: de-sample
+spec:
+  # TODO(user): Add fields here
+  components:
+    - name: "main"
+      url: "http://localhost:9000/test/main"
+      volumes: {}
+    - name: "node1"
+      url: "http://localhost:9000/test/node1"
+      volumes: {}
+    - name: "node2"
+      url: "http://localhost:9000/test/node2"
+      volumes: {}
+    - name: "node3"
+      url: "http://localhost:9000/test/node3"
+      volumes: {}
+  autoStart: ""

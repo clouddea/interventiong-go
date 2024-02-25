@@ -1,0 +1,12 @@
+apiVersion: intervention.xue1.top/v1
+kind: CT
+metadata:
+  labels:
+    app.kubernetes.io/name: ct
+    app.kubernetes.io/instance: ct-sample
+    app.kubernetes.io/part-of: intervention-go
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: intervention-go
+  name: ct-sample
+spec:
+  # TODO(user): Add fields here

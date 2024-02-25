@@ -1,0 +1,23 @@
+package config
+
+//const (
+//	CONFIG_GENR_ENDPOINT  = "localhost:8081"
+//	CONFIG_TRANS_ENDPOINT = "localhost:8082"
+//	CONFIG_PROC_ENDPOINT  = "localhost:8083"
+//	CONFIG_ROOT_ENDPOINT  = "localhost:8080"
+//	CONFIG_GENR_SERVE     = "0.0.0.0:8081"
+//	CONFIG_TRANS_SERVE    = "0.0.0.0:8082"
+//	CONFIG_PROC_SERVE     = "0.0.0.0:8083"
+//	CONFIG_ROOT_SERVE     = "0.0.0.0:8080"
+//)
+
+const (
+	CONFIG_GENR_ENDPOINT  = "genr:80"
+	CONFIG_TRANS_ENDPOINT = "trans:80"
+	CONFIG_PROC_ENDPOINT  = "proc:80"
+	CONFIG_ROOT_ENDPOINT  = "root:80"
+	CONFIG_GENR_SERVE     = "0.0.0.0:80"
+	CONFIG_TRANS_SERVE    = "0.0.0.0:80"
+	CONFIG_PROC_SERVE     = "0.0.0.0:80"
+	CONFIG_ROOT_SERVE     = "0.0.0.0:80"
+)

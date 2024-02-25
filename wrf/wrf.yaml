@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wrf
+spec:
+#  ports:
+#    - port: 80
+#      name: web
+  clusterIP: None
+  selector:
+    app: mpich
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mpich-config
+data:
+  id_rsa: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIICXQIBAAKBgQC6q10sUwT4w34YJyJcUwYXGLSTgd7iRT2wS7xKgzE/bnBlDx0K
+    naFmDR/Cxpzhjvrhef5ctg28cno4LraUkS7BObmdf2TwP1gpTsFkjXfT5wU0Z4t0
+    eYjOK1RfGQ9X9jnr8Q2wzMqBcP5BbtVfpBz2u+cd3r8pioyNYrLR+04+wwIDAQAB
+    AoGBALGL2D0WYX4ygrZ6UmY52WsSZn5+Yf4ZGYmbH2ZHzgmlA2Y7r8WvFBo6lWDv
+    A7xOADWBkPuhdQMuZy0U0TgRtsMWSU3Sf6jaZvGaPkQe7hSqeWGyYOH5EWswXya5
+    Jl85YL3JVvZvu9FTTydL9VLBfsH6ZUWoVaSYN64MK8SSrtuBAkEA2bmzIV7ETtEz
+    YVVNy01SxC7gsYyoZ0Z7i+XGyE/JwLwVg1bAwk2sb8SmLrLKeN16ycsWVUCk+Z+U
+    KsO+E/BbIQJBANt8DOpXxTWIREH5zOUZO4FaeFyo0lrnkTaB4GPymlNKmm89QlUT
+    hLOvRFGzr14ePrky9DhFSdJMXiA2kVfj4WMCQHXkBUiGZck/oZCMfgkdHzm3IFdD
+    EFSLZ45CprYD7fx8WzG4obsUD9CdLFaQ3O1BD6GAY+FZlXrMm4/kWWG2fcECQBNE
+    U3nq1IP7f0pvXD4sNd4IDBLOOxEBzOyFACal8Egpf18OeJkxSm/fjdbCOD3B1+23
+    /FpIMs/EJmsbfyzA81MCQQCXGMfCcT8obChSkoRhqLdr1UISfsXjFzDtg+PomnP5
+    kOquQfJvsQ/Qexp8LFEcyRVjNGlh1GkhVr4bhOagYIS+
+    -----END RSA PRIVATE KEY-----
+  id_rsa.pub: |
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC6q10sUwT4w34YJyJcUwYXGLSTgd7iRT2wS7xKgzE/bnBlDx0KnaFmDR/Cxpzhjvrhef5ctg28cno4LraUkS7BObmdf2TwP1gpTsFkjXfT5wU0Z4t0eYjOK1RfGQ9X9jnr8Q2wzMqBcP5BbtVfpBz2u+cd3r8pioyNYrLR+04+ww==
+  authorized_keys: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC6q10sUwT4w34YJyJcUwYXGLSTgd7iRT2wS7xKgzE/bnBlDx0KnaFmDR/Cxpzhjvrhef5ctg28cno4LraUkS7BObmdf2TwP1gpTsFkjXfT5wU0Z4t0eYjOK1RfGQ9X9jnr8Q2wzMqBcP5BbtVfpBz2u+cd3r8pioyNYrLR+04+ww=="
+  config: |
+    Host *
+        StrictHostKeyChecking no
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mpich
+spec:
+  selector:
+    matchLabels:
+      app: mpich # 必须匹配 .spec.template.metadata.labels
+  serviceName: "wrf"
+  replicas: 4 # 默认值是 1
+  minReadySeconds: 10 # 默认值是 0
+  template:
+    metadata:
+      labels:
+        app: mpich # 必须匹配 .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mpi-container
+          image: ct-mpich:1.0
+          imagePullPolicy: Never
+          command:
+            - /bin/sh
+            - -c
+            - |
+              hostname $(hostname).wrf
+              mkdir /root/.ssh
+              cp /root/ssh/* /root/.ssh
+              chmod -R 600 /root/.ssh
+              service ssh start
+              sleep 24d
+          securityContext:
+            privileged: true  # 使用特权模式，从而可以修改hostname
+#          ports:
+#            - containerPort: 80
+#              name: web
+          volumeMounts:
+            - name: ssh
+              mountPath: "/root/ssh"
+              readOnly: true # configmap和secret是只读的， 这样配置了也没用
+      volumes:
+        - name: ssh
+          configMap:
+            name: mpich-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ct-daemon
+spec:
+  clusterIP: None  # 普通Service会有Endpoint的限制，在这里使用无头服务
+  selector:
+    app: ct-daemon
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ct-daemon
+spec:
+  selector:
+    matchLabels:
+      app: ct-daemon # 必须匹配 .spec.template.metadata.labels
+  replicas: 1 # 默认值是 1
+  minReadySeconds: 10 # 默认值是 0
+  template:
+    metadata:
+      labels:
+        app: ct-daemon # 必须匹配 .spec.selector.matchLabels
+    spec:
+      containers:
+        - name: ct-daemon-container
+          image: ct-daemon:1.0
+          imagePullPolicy: Never
+          command:
+            - /bin/sh
+            - -c
+            - |
+              hostname ct-daemon
+              mkdir /root/.ssh
+              cp /root/ssh/* /root/.ssh
+              chmod -R 600 /root/.ssh
+              service ssh start
+              /project/daemon.exe
+          env:
+            - name: CLUSTER_SIZE_ENV
+              value: "4"
+            - name: CLUSTER_NAME_ENV
+              value: mpich
+            - name: CLUSTER_SERVICE_NAME_ENV
+              value: wrf
+          securityContext:
+            privileged: true  # 使用特权模式，从而可以修改hostname
+          volumeMounts:
+            - name: ssh
+              mountPath: "/root/ssh"
+              readOnly: true # configmap和secret是只读的， 这样配置了也没用
+      volumes:
+        - name: ssh
+          configMap:
+            name: mpich-config

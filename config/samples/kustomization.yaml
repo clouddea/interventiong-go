@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- intervention_v1_de.yaml
+- intervention_v1_ct.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
