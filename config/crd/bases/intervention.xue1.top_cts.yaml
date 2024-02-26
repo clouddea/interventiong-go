@@ -36,6 +36,7 @@ spec:
             properties:
               replicas:
                 description: Foo is an example field of CT. Edit ct_types.go to remove/update
+                format: int32
                 type: integer
               volumes:
                 additionalProperties:
@@ -44,6 +45,17 @@ spec:
             type: object
           status:
             description: CTStatus defines the observed state of CT
+            properties:
+              daemon:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+              mpich:
+                type: string
+            required:
+            - daemon
+            - mpich
             type: object
         type: object
     served: true

@@ -9,4 +9,6 @@ metadata:
     app.kubernetes.io/created-by: intervention-go
   name: ct-sample
 spec:
-  # TODO(user): Add fields here
+  replicas: 3
+
+

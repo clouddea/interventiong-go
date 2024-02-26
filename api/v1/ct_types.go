@@ -29,7 +29,7 @@ type CTSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of CT. Edit ct_types.go to remove/update
-	Replicas int               `json:"replicas,omitempty"`
+	Replicas int32             `json:"replicas,omitempty"`
 	Volumes  map[string]string `json:"volumes,omitempty"`
 }
 
@@ -37,6 +37,8 @@ type CTSpec struct {
 type CTStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Daemon string `json:"daemon"` // daemon deployment
+	Mpich  string `json:"mpich"`  // mpich statefulset cluster
 }
 
 //+kubebuilder:object:root=true
