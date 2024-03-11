@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/clouddea/devs-go/modeling"
 	"github.com/clouddea/devs-go/simulation"
 	"intervention-go/config"
-	"time"
 )
 
 func main() {
@@ -21,9 +19,8 @@ func main() {
 	coupled.AddCoupling(transStub, "out", procStub, "in1")
 	coordinator := simulation.NewCoordinator(coupled, nil)
 	root := simulation.NewRoot(coordinator)
-	go root.Serve(config.CONFIG_ROOT_SERVE)
-
-	root.Simulate(1*time.Second, func(t uint64) {
-		fmt.Printf("time advance: %v \n", t)
-	})
+	root.Serve(config.CONFIG_ROOT_SERVE)
+	//root.Simulate(1*time.Second, func(t uint64) {
+	//	fmt.Printf("time advance: %v \n", t)
+	//})
 }

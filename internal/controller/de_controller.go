@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"github.com/clouddea/devs-go/simulation"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -123,13 +124,30 @@ func (r *DEReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "busybox",
-							Image:   "busybox",
-							Command: []string{"sleep", "3600"},
+							Name:  "busybox",
+							Image: "busybox:glibc",
+							Command: []string{
+								"/bin/sh",
+								"-c",
+								"wget -O /root/app.bin " + comp.URL + "\n" +
+									"chmod +x /root/app.bin\n" +
+									"./root/app.bin",
+							},
+							StartupProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: 80,
+										},
+									},
+								},
+								FailureThreshold: 5,
+								PeriodSeconds:    3,
+							},
 						},
 					},
 				},
-				// TODO: 设置启动探针和存活探针。启动探针成功后会由存活探针接管
 				// 就绪探针与存活探针是相互独立的，当就绪探针失败时，不会接收Service的流量
 				// 在论文中画流程图
 				// 代码放在附录中
@@ -147,7 +165,7 @@ func (r *DEReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 		if !ok3 {
 			service := &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      instance.Name + "-" + comp.Name + "-service",
+					Name:      comp.Name,
 					Namespace: instance.Namespace,
 					Labels: map[string]string{
 						"app": instance.Name,
@@ -186,21 +204,44 @@ func (r *DEReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Re
 			client, err := rpc.DialHTTP("tcp", instance.Spec.AutoStart)
 			if err != nil {
 				logger.Error(err, "构建rpc客户端失败")
-				// TODO：更新状态为失败
+				instance2 := &interventionv1.DE{}
+				if err := r.Client.Get(ctx, req.NamespacedName, instance2); err != nil {
+					if errors.IsNotFound(err) {
+						return ctrl.Result{}, nil // 说明已经被删除了，不需要再调度
+					}
+					return ctrl.Result{}, err
+				}
+				instance2.Status.Status = "FAILED"
+				if err := r.Client.Status().Update(ctx, instance2); err != nil {
+					logger.Error(err, "更新状态为failed失败") // 不允许对同一个版本作两次修改， 因此需要重新获取一下
+					return ctrl.Result{}, err
+				}
 				return ctrl.Result{}, err
 			}
-			var input = struct{ foo int }{}
-			var reply = struct{ foo int }{}
-			err = client.Call("Root.Simulate", &input, &reply)
+			var input = simulation.RootTimeArg{}
+			var reply = simulation.RootTimeArg{}
+			err = client.Call("Root.RPCSimulate", &input, &reply)
 			if err != nil {
 				logger.Error(err, "通过RPC启动仿真失败")
+				instance2 := &interventionv1.DE{}
+				if err := r.Client.Get(ctx, req.NamespacedName, instance2); err != nil {
+					if errors.IsNotFound(err) {
+						return ctrl.Result{}, nil // 说明已经被删除了，不需要再调度
+					}
+					return ctrl.Result{}, err
+				}
+				instance2.Status.Status = "FAILED"
+				if err := r.Client.Status().Update(ctx, instance2); err != nil {
+					logger.Error(err, "更新状态为failed2失败")
+					return ctrl.Result{}, err
+				}
 				return ctrl.Result{}, err
 			}
 		}
 	} else {
 		instance.Status.Status = "PENDING"
 		if err := r.Client.Status().Update(ctx, instance); err != nil {
-			logger.Error(err, "更新状态失败")
+			logger.Error(err, "更新状态为pending失败")
 			return ctrl.Result{}, err
 		}
 	}
@@ -213,8 +254,8 @@ func (r *DEReconciler) ensureComponent(
 	comp interventionv1.DEComponent,
 	existPodMap map[string]corev1.Pod,
 	existSvcMap map[string]corev1.Service) (bool, bool, bool) {
-	serviceName := inst.Name + "-" + comp.Name + "-service" // 不能有下划线
-	podName := inst.Name + "-" + comp.Name + "-pod"
+	serviceName := comp.Name
+	podName := inst.Name + "-" + comp.Name + "-pod" // 不能有下划线
 	var ok1 bool = false
 	var ok2 bool = false
 	_, ok1 = existPodMap[podName]

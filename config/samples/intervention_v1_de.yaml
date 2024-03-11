@@ -11,16 +11,18 @@ metadata:
 spec:
   # TODO(user): Add fields here
   components:
-    - name: "main"
-      url: "http://localhost:9000/test/main"
+    - name: "root"
+      url: "http://10.1.0.191:9000/devs/main.bin"
       volumes: {}
-    - name: "node1"
-      url: "http://localhost:9000/test/node1"
+    - name: "genr"
+      url: "http://10.1.0.191:9000/devs/node1.bin"
       volumes: {}
-    - name: "node2"
-      url: "http://localhost:9000/test/node2"
+    - name: "trans"
+      url: "http://10.1.0.191:9000/devs/node2.bin"
       volumes: {}
-    - name: "node3"
-      url: "http://localhost:9000/test/node3"
-      volumes: {}
-  autoStart: ""
+    - name: "proc"
+      url: "http://10.1.0.191:9000/devs/node3.bin"
+      volumes:
+        share: "/root/data"
+  autoStart: "root:80" # port forward to
+
