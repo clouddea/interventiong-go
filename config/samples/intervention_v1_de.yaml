@@ -12,16 +12,16 @@ spec:
   # TODO(user): Add fields here
   components:
     - name: "root"
-      url: "http://10.1.0.191:9000/devs/main.bin"
+      url: "http://minio:9000/devs/main.bin"
       volumes: {}
     - name: "genr"
-      url: "http://10.1.0.191:9000/devs/node1.bin"
+      url: "http://minio:9000/devs/node1.bin"
       volumes: {}
     - name: "trans"
-      url: "http://10.1.0.191:9000/devs/node2.bin"
+      url: "http://minio:9000/devs/node2.bin"
       volumes: {}
     - name: "proc"
-      url: "http://10.1.0.191:9000/devs/node3.bin"
+      url: "http://minio:9000/devs/node3.bin"
       volumes:
         share: "/root/data"
   autoStart: "root:80" # port forward to
